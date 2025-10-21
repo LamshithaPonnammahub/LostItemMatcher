@@ -12,10 +12,12 @@ function App() {
   const [notFound, setNotFound] = useState(false);
   const [thankYou, setThankYou] = useState(false);
   const [noResponseMessage, setNoResponseMessage] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showHome, setShowHome] = useState(true);
 
-  // Submit user input
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setMatchedItems([]);
     setShowPopup(false);
     setNotFound(false);
@@ -33,27 +35,22 @@ function App() {
 
       const data = await response.json();
 
-      if (data.length === 0) {
+      // Handle "Item Not Found"
+      if (!data || data.length === 0 || data.message === "Item Not Found.") {
         setNotFound(true);
-      } else {
-        // Find the most exact match
-        const match = data.find(
-          (item) =>
-            item.type.toLowerCase() === type.toLowerCase() &&
-            item.color.toLowerCase() === color.toLowerCase() &&
-            item.description.toLowerCase() === description.toLowerCase()
-        ) || data[0];
-
-        setMatchedItems(data);
-        setSelectedItem(match);
-        setShowPopup(true);
+        return;
       }
+
+      // Matches found → show popup
+      setMatchedItems(data);
+      setSelectedItem(data[0]);
+      setShowPopup(true);
+
     } catch (error) {
       console.error("Error fetching items:", error);
     }
   };
 
-  // Handle Yes/No on popup
   const handlePopupResponse = async (isOwner) => {
     setShowPopup(false);
     if (isOwner && selectedItem) {
@@ -68,20 +65,40 @@ function App() {
             status: "claimed",
           }),
         });
+        setSuccessMessage(
+          `This is your item ✅ Please contact Help Desk Center in Sahyadri College, Mangaluru.`
+        );
+        setThankYou(true);
       } catch (error) {
         console.error("Error confirming item:", error);
       }
-      setThankYou(true);
     } else if (!isOwner) {
       setNoResponseMessage(true);
     }
   };
 
+  // ----- Render Homepage -----
+  if (showHome) {
+    return (
+      <div className="homepage">
+        <div className="homepage-overlay">
+          <h1>Lost Item Matcher</h1>
+          <p>
+            Welcome to Lost Item Matcher! Quickly find lost items or report them.
+          </p>
+          <button className="btn" onClick={() => setShowHome(false)}>
+            Get Started
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ----- Render Main Form and Other UI -----
   return (
     <div className="container">
       <h1 className="title">Lost Item Matcher</h1>
 
-      {/* Input Form */}
       <form className="form" onSubmit={handleSubmit}>
         <input
           type="text"
@@ -106,7 +123,7 @@ function App() {
         />
         <input
           type="email"
-          placeholder="Your Email (optional)"
+          placeholder="Email (optional)"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -115,7 +132,7 @@ function App() {
         </button>
       </form>
 
-      {/* Matched Items */}
+      {/* Matched Items (if not showing popup) */}
       {matchedItems.length > 0 && !showPopup && (
         <div className="items-container">
           {matchedItems.map((item, index) => (
@@ -124,16 +141,14 @@ function App() {
                 src={`http://127.0.0.1:5000/${item.image_path}`}
                 alt={item.filename}
               />
-              <div>
-                <h3>{item.filename}</h3>
-                <p>{item.description}</p>
-              </div>
+              <h3>{item.filename}</h3>
+              <p>{item.description}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Popup for Confirming Item */}
+      {/* Popup for Yes/No */}
       {showPopup && selectedItem && (
         <div className="overlay">
           <div className="popup-card">
@@ -156,28 +171,28 @@ function App() {
       {thankYou && (
         <div className="overlay">
           <div className="popup-card thank-you-card">
-            <h2>🎉 Thank you!</h2>
-            <p>Your item is successfully marked as claimed.</p>
-            <img
-              src="https://media.giphy.com/media/111ebonMs90YLu/giphy.gif"
-              alt="celebration"
-              className="thank-you-image"
-            />
-            <button
-              onClick={() => setThankYou(false)}
-              className="popup-close-btn"
-            >
+            <h2>🎉 Item Confirmed!</h2>
+            {selectedItem && (
+              <img
+                src={`http://127.0.0.1:5000/${selectedItem.image_path}`}
+                alt={selectedItem.filename}
+                className="popup-image"
+                style={{ maxWidth: "200px", margin: "1rem 0" }}
+              />
+            )}
+            <p>{successMessage}</p>
+            <button onClick={() => setThankYou(false)} className="popup-close-btn">
               Close
             </button>
           </div>
         </div>
       )}
 
-      {/* Item Not Found */}
+      {/* Item Not Found Popup */}
       {notFound && (
         <div className="overlay">
           <div className="popup-card notfound-card">
-            <h2>❌ Sorry! No item found.</h2>
+            <h2>❌ Item Not Found</h2>
             <p>Enter your email to get notified if a similar item is added:</p>
             <input
               type="email"
@@ -193,11 +208,14 @@ function App() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ description, email }),
                   });
+                  setSuccessMessage(
+                    "Thank you! You will be notified if a matching item is added."
+                  );
+                  setThankYou(true);
+                  setNotFound(false);
                 } catch (error) {
                   console.error("Error adding notification:", error);
                 }
-                setThankYou(true);
-                setNotFound(false);
               }}
             >
               Submit
