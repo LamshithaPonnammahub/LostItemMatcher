@@ -1,169 +1,58 @@
-/* Body & Container */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(to right, #74ebd5, #ACB6E5);
-  margin: 0;
-  padding: 0;
-}
 
-.container {
-  max-width: 800px;
-  margin: 2rem auto;
-  padding: 1rem;
-  text-align: center;
-}
 
-/* Title */
-.title {
-  font-size: 2.5rem;
-  color: #fff;
-  margin-bottom: 2rem;
-  text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
-}
-
-/* Form Inputs */
-.form input {
-  padding: 0.7rem;
-  margin: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  width: 200px;
-  transition: all 0.3s ease;
-}
-
-.form input:focus {
-  border-color: #6a11cb;
-  box-shadow: 0 0 8px rgba(106, 17, 203, 0.4);
-}
-
-/* Button */
-.btn {
-  padding: 0.7rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  background: #6a11cb;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn:hover {
-  background: #2575fc;
-  transform: scale(1.05);
-}
-
-/* Items Display */
-.items-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 2rem;
-}
-
-.item-card {
-  background: #fff;
-  border-radius: 10px;
-  width: 180px;
-  margin: 1rem;
-  padding: 0.5rem;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.item-card:hover {
-  transform: translateY(-5px) scale(1.05);
-  box-shadow: 0 12px 20px rgba(0,0,0,0.3);
-}
-
-.item-card img {
-  width: 100%;
-  border-radius: 8px;
-}
-
-/* Overlay & Popup */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
+body { font-family: Arial; background: #e0f7fa; margin:0; padding:0; }
+.container { max-width:800px; margin:2rem auto; text-align:center; }
+.title { font-size:2.5rem; margin-bottom:1.5rem; color:#00796b; }
+.form input { padding:0.7rem; margin:0.5rem; border-radius:8px; border:1px solid #ccc; width:200px; }
+.btn { padding:0.7rem 1.5rem; border:none; border-radius:8px; background:#00796b; color:white; cursor:pointer; }
+.items-container { display:flex; flex-wrap:wrap; justify-content:center; margin-top:1rem; }
+.item-card { background:white; border-radius:10px; width:180px; margin:1rem; padding:0.5rem; box-shadow:0 6px 12px rgba(0,0,0,0.2);}
+.item-card img { width:100%; border-radius:8px; }
+.overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:999;}
+.popup-card { background:white; padding:2rem; border-radius:15px; width:350px; text-align:center;}
+.popup-image { width:150px; margin:1rem 0; }
+.popup-buttons button { margin:0 1rem; padding:0.5rem 1rem; border:none; border-radius:8px; background:#00796b; color:white; cursor:pointer;}
+.popup-buttons button:hover { background:#004d40;}
+/* Homepage styles */
+.homepage {
+  
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 999;
 }
 
-.popup-card {
-  background: #fff;
-  padding: 2rem;
+.homepage-overlay {
+  background: rgba(255, 255, 255, 0.85);
+  padding: 3rem;
   border-radius: 15px;
-  width: 350px;
-  max-width: 90%;
   text-align: center;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-  animation: popIn 0.4s ease-out;
+  max-width: 600px;
 }
 
-.popup-image {
-  width: 200px;
-  height: auto;
-  margin: 1rem 0;
+.homepage-overlay h1 {
+  font-size: 3rem;
+  color: #6a11cb;
+  margin-bottom: 1rem;
 }
 
-.popup-buttons button {
-  margin: 0 1rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
+.homepage-overlay p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.homepage-overlay .btn {
   background: #6a11cb;
   color: white;
-  font-weight: bold;
-  transition: 0.3s;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
-.popup-buttons button:hover {
+.homepage-overlay .btn:hover {
   background: #2575fc;
 }
-
-/* Thank You Popup */
-.thank-you-card {
-  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-  color: #fff;
-}
-
-.thank-you-card h2 {
-  font-size: 1.8rem;
-}
-
-.thank-you-image {
-  width: 150px;
-  margin: 1rem 0;
-}
-
-.popup-close-btn {
-  padding: 0.5rem 1.2rem;
-  border: none;
-  border-radius: 8px;
-  background: #fff;
-  color: #2575fc;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.popup-close-btn:hover {
-  background: #e0e0e0;
-}
-
-/* Item Not Found Popup */
-.notfound-card {
-  background: #ff6b6b;
-  color: #fff;
-}
-
-
-
-
