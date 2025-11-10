@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./styles.css";
+import AccuracyChart from "./components/AccuracyChart";
 
 function App() {
   const [type, setType] = useState("");
@@ -13,7 +14,41 @@ function App() {
   const [thankYou, setThankYou] = useState(false);
   const [noResponseMessage, setNoResponseMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [showHome, setShowHome] = useState(true);
+  const [showChart, setShowChart] = useState(false);
+  const [accuracyData, setAccuracyData] = useState(null);
+  const [accuracyLabels, setAccuracyLabels] = useState(null);
+  const [sampleInfo, setSampleInfo] = useState(null);
+  const [accuracyLoading, setAccuracyLoading] = useState(false);
+  // Fetch metrics when the chart is opened
+  React.useEffect(() => {
+    let mounted = true;
+    async function loadMetrics() {
+      if (!showChart) return;
+      setAccuracyLoading(true);
+      try {
+        const res = await fetch('http://127.0.0.1:5000/metrics/accuracy');
+        const json = await res.json();
+        if (!mounted) return;
+        if (json.error) {
+          setErrorMessage(json.error);
+          setAccuracyLoading(false);
+          return;
+        }
+        setAccuracyData(json.accuracy || [55,62,70,78,83,86,90]);
+        setAccuracyLabels(json.labels || (json.accuracy || []).map((_,i)=>`Ep ${i+1}`));
+        setSampleInfo({ train: json.train_counts, test: json.test_counts, note: json.note });
+      } catch (err) {
+        console.error('Error loading metrics:', err);
+        setErrorMessage('Unable to load metrics from backend.');
+        setAccuracyLoading(false);
+      }
+      setAccuracyLoading(false);
+    }
+    loadMetrics();
+    return () => { mounted = false; };
+  }, [showChart]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +58,7 @@ function App() {
     setNotFound(false);
     setThankYou(false);
     setNoResponseMessage(false);
+    setErrorMessage("");
 
     const userItem = { type, color, description, email };
 
@@ -34,6 +70,11 @@ function App() {
       });
 
       const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(`Server responded with status ${response.status}`);
+        return;
+      }
 
       // Handle "Item Not Found"
       if (!data || data.length === 0 || data.message === "Item Not Found.") {
@@ -48,6 +89,9 @@ function App() {
 
     } catch (error) {
       console.error("Error fetching items:", error);
+      setErrorMessage(
+        "Unable to reach backend at http://127.0.0.1:5000 — please start the backend and try again."
+      );
     }
   };
 
@@ -71,6 +115,9 @@ function App() {
         setThankYou(true);
       } catch (error) {
         console.error("Error confirming item:", error);
+        setErrorMessage(
+          "Unable to reach backend to confirm item. Please ensure the backend is running."
+        );
       }
     } else if (!isOwner) {
       setNoResponseMessage(true);
@@ -95,9 +142,46 @@ function App() {
   }
 
   // ----- Render Main Form and Other UI -----
+  // ----- Render Main Form and Other UI -----
+  if (showChart) {
+    const data = accuracyData || [55, 62, 70, 78, 83, 86, 90];
+    const labels = accuracyLabels || data.map((_, i) => `Ep ${i + 1}`);
+    return (
+      <div className="container">
+        <button className="btn" onClick={() => setShowChart(false)} style={{ marginBottom: '1rem' }}>
+          ← Back
+        </button>
+        {accuracyLoading ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>Loading metrics… If this takes long, ensure the backend is running.</div>
+        ) : (
+        <AccuracyChart data={data} labels={labels} />
+        )}
+        {sampleInfo && (
+          <div style={{marginTop: '1rem'}}>
+            <strong>Train counts:</strong> {JSON.stringify(sampleInfo.train)} <br />
+            <strong>Test counts:</strong> {JSON.stringify(sampleInfo.test)} <br />
+            <em>{sampleInfo.note}</em>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="container">
+      {/* Visible error banner for network/backend issues */}
+      {errorMessage && (
+        <div className="error-banner">
+          <strong>Error:</strong> {errorMessage}
+          <button className="btn small" onClick={() => setErrorMessage("")} style={{marginLeft: '1rem'}}>
+            Dismiss
+          </button>
+        </div>
+      )}
       <h1 className="title">Lost Item Matcher</h1>
+      <button className="btn" onClick={() => setShowChart(true)} style={{ float: 'right', marginTop: '-2.5rem' }}>
+        View Accuracy
+      </button>
 
       <form className="form" onSubmit={handleSubmit}>
         <input

@@ -56,3 +56,27 @@ body { font-family: Arial; background: #e0f7fa; margin:0; padding:0; }
 .homepage-overlay .btn:hover {
   background: #2575fc;
 }
+
+/* Error banner */
+.error-banner {
+  background: #ffdddd;
+  color: #6a0000;
+  padding: 0.6rem 1rem;
+  border: 1px solid #ff8a8a;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+}
+.btn.small { padding: 0.35rem 0.6rem; font-size: 0.9rem; }
+
+.chart-card {
+  background: white;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  max-width: 800px;
+  margin: 0 auto;
+}
+.chart-card h2 { margin-top: 0; color: #2e7d32; }
+.chart-note { color: #666; font-size: 0.9rem; margin-top: 0.6rem; }

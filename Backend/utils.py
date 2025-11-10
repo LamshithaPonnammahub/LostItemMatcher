@@ -220,3 +220,92 @@ def save_confirmation(email, filename, description, status):
         if not file_exists:
             writer.writerow(["email", "filename", "description", "status"])
         writer.writerow([email, filename, description, status])
+
+
+def compute_accuracy_curve(train_fracs=None, trials=3, top_k=1):
+    """
+    Compute accuracy across different training set fractions.
+    - train_fracs: iterable of fractions (0< f <=1) to use as train size
+    - trials: number of random trials per fraction (averaged)
+    - top_k: whether to use top-k accuracy (1 means top-1)
+
+    Returns dict:
+      {
+        'accuracy': [percentages],
+        'labels': ['F10','F20',...],
+        'train_counts': [n_train...],
+        'test_counts': [n_test...]
+      }
+    Falls back to empty results if sklearn isn't available.
+    """
+    if train_fracs is None:
+        train_fracs = [0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0]
+
+    # Try to import sklearn here; if unavailable, raise a clear error
+    try:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+    except Exception as e:
+        raise ImportError("sklearn required to compute accuracy curve: " + str(e))
+
+    df = load_data()
+    results = []
+    train_counts = []
+    test_counts = []
+
+    for frac in train_fracs:
+        accs = []
+        n_train = 0
+        n_test = 0
+        for _ in range(trials):
+            # sample train fraction
+            if frac >= 1.0:
+                train_df = df.copy()
+                test_df = df.sample(frac=0.3) if len(df) > 5 else df.copy()
+            else:
+                train_df = df.sample(frac=frac, replace=False)
+                test_df = df.drop(train_df.index)
+
+            # If no test rows, skip this trial
+            if test_df.empty or train_df.empty:
+                continue
+
+            n_train = len(train_df)
+            n_test = len(test_df)
+
+            vectorizer = TfidfVectorizer()
+            train_corpus = train_df['combined'].tolist()
+            train_vecs = vectorizer.fit_transform(train_corpus)
+
+            # For each test row compute similarity to all train rows
+            correct = 0
+            total = 0
+            for _, row in test_df.iterrows():
+                query = row['combined']
+                qvec = vectorizer.transform([query])
+                sims = cosine_similarity(qvec, train_vecs).flatten()
+                # get top_k indices from train
+                top_indices = sims.argsort()[::-1][:top_k]
+                top_filenames = [train_df.iloc[i]['filename'] for i in top_indices]
+                # check if true filename present
+                if row['filename'] in top_filenames:
+                    correct += 1
+                total += 1
+
+            if total > 0:
+                accs.append(correct / total)
+
+        # average over trials
+        avg_acc = float(sum(accs) / len(accs)) if accs else 0.0
+        results.append(round(avg_acc * 100, 2))
+        train_counts.append(n_train)
+        test_counts.append(n_test)
+
+    labels = [f"F{int(frac*100)}" for frac in train_fracs]
+    return {
+        "accuracy": results,
+        "labels": labels,
+        "train_counts": train_counts,
+        "test_counts": test_counts,
+        "note": "Accuracy = top-{} averaged over {} trials per fraction".format(top_k, trials),
+    }

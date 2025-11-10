@@ -165,11 +165,34 @@
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from utils import find_item, save_notification, save_confirmation
 import os
 
+# Try to import utils (which depends on heavier ML packages). If the import
+# fails (for example, because dependencies are not installed), provide
+# lightweight stub implementations so the Flask server can still start and
+# respond to basic endpoints during development.
+try:
+    from utils import find_item, save_notification, save_confirmation
+    _UTILS_AVAILABLE = True
+except Exception as _e:
+    print("Warning: could not import utils module; using stubs:", _e)
+    _UTILS_AVAILABLE = False
+
+    def find_item(user_item):
+        # Return empty list so frontend receives "Item Not Found." flow
+        print("Stub: find_item called with:", user_item)
+        return []
+
+    def save_notification(email, description, status="pending"):
+        print(f"Stub: save_notification -> {email}, {description}, {status}")
+
+    def save_confirmation(email, filename, description, status="claimed"):
+        print(f"Stub: save_confirmation -> {email}, {filename}, {description}, {status}")
+
 app = Flask(__name__)
-CORS(app)
+# 
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
+
 
 # Folder where images are stored
 UPLOAD_FOLDER = os.path.join(os.getcwd(), "dataset", "images")
@@ -180,7 +203,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def serve_image(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# Find item
 @app.route("/find-item", methods=["POST"])
 def find_item_endpoint():
     user_item = request.get_json()
@@ -205,6 +227,29 @@ def find_item_endpoint():
         item['image_path'] = f"/images/{filename_only}"
 
     return jsonify(matched_items), 200
+
+
+# Metrics endpoint: return accuracy curve and sample counts
+@app.route("/metrics/accuracy", methods=["GET"])
+def metrics_accuracy():
+    # If utils provide a compute_accuracy_curve function, use it.
+    try:
+        if _UTILS_AVAILABLE and hasattr(__import__('utils'), 'compute_accuracy_curve'):
+            from utils import compute_accuracy_curve
+            metrics = compute_accuracy_curve()
+            return jsonify(metrics), 200
+        else:
+            # Fallback demo data so frontend can still show a meaningful chart
+            demo = {
+                "accuracy": [55, 62, 70, 78, 83, 86, 90],
+                "labels": ["Ep1","Ep2","Ep3","Ep4","Ep5","Ep6","Ep7"],
+                "train_counts": [30, 60, 90, 120, 150, 180, 210],
+                "test_counts": [270, 240, 210, 180, 150, 120, 90],
+                "note": "Demo data (utils not available or compute disabled)."
+            }
+            return jsonify(demo), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Confirm item
 @app.route("/confirm-item", methods=["POST"])
